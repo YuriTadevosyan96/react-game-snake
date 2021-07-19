@@ -1,0 +1,11 @@
+.GameCell {
+  aspect-ratio: 1;
+}
+
+.FoodCell {
+  background-color: #ff0000;
+}
+
+.SnakeBodyPart {
+  background-color: var(--color-primary);
+}
