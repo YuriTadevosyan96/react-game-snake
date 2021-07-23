@@ -9,20 +9,22 @@ import {
   calcSnakeBodyPartIndexZeroBased,
 } from './utils';
 
-const GAME_BOARD_ROWS = 10;
-const GAME_BOARD_COLUMNS = 11;
+const GAME_BOARD_ROWS = 4;
+const GAME_BOARD_COLUMNS = 3;
 const GAME_STEP_INTERVAL = 500; // milliseconds
 const TOTAL_CELL_AMOUNT = GAME_BOARD_ROWS * GAME_BOARD_COLUMNS;
 
 const initialState = {
   snakeBodyCords: [
-    { row: 3, column: 6, direction: 'UP' },
-    { row: 4, column: 6, direction: 'UP' },
-    { row: 5, column: 6, direction: 'UP' },
-    { row: 6, column: 6, direction: 'UP' },
-    { row: 7, column: 6, direction: 'UP' },
-    { row: 8, column: 6, direction: 'UP' },
-    { row: 9, column: 6, direction: 'UP' },
+    { row: 2, column: 2, direction: 'UP' },
+    { row: 3, column: 2, direction: 'UP' },
+    // { row: 3, column: 6, direction: 'UP' },
+    // { row: 4, column: 6, direction: 'UP' },
+    // { row: 5, column: 6, direction: 'UP' },
+    // { row: 6, column: 6, direction: 'UP' },
+    // { row: 7, column: 6, direction: 'UP' },
+    // { row: 8, column: 6, direction: 'UP' },
+    // { row: 9, column: 6, direction: 'UP' },
   ], // [{row: Number, column: Number, direction: enum(UP, DOWN, LEFT, RIGHT)}, ...]
   snakeHeadDirection: 'UP', // enum(UP, DOWN, LEFT, RIGHT)
   gameScore: 0,
@@ -109,15 +111,17 @@ const isSnakeHeadOnFoodCell = (snakeHeadCords, foodCellIndex) => {
 };
 
 const updateGameStateSnakeHeadOnFoodCell = (gameState, snakeBodyCords, snakeBodyCordsUpdated) => {
+  const snakeBodyNewCords = [snakeBodyCordsUpdated[0], ...snakeBodyCords];
+
   const foodCellIndex = generateNotOccupiedCellIndex(
-    gameState.snakeBodyCords,
+    snakeBodyNewCords,
     TOTAL_CELL_AMOUNT,
     GAME_BOARD_COLUMNS
   );
 
   return {
     ...gameState,
-    snakeBodyCords: [snakeBodyCordsUpdated[0], ...snakeBodyCords],
+    snakeBodyCords: snakeBodyNewCords,
     foodCellIndex: foodCellIndex,
     gameScore: gameState.gameScore + 1,
   };
