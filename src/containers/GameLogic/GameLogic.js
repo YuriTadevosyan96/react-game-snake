@@ -9,7 +9,7 @@ import {
   calcSnakeBodyPartIndexZeroBased,
 } from './utils';
 
-const GAME_BOARD_ROWS = 4;
+const GAME_BOARD_ROWS = 3;
 const GAME_BOARD_COLUMNS = 3;
 const GAME_STEP_INTERVAL = 500; // milliseconds
 const TOTAL_CELL_AMOUNT = GAME_BOARD_ROWS * GAME_BOARD_COLUMNS;
@@ -30,6 +30,7 @@ const initialState = {
   gameScore: 0,
   foodCellIndex: null,
   gameOver: false,
+  isMaxScoreReached: false,
 };
 
 const gameControlReducer = (state, action) => {
@@ -113,18 +114,23 @@ const isSnakeHeadOnFoodCell = (snakeHeadCords, foodCellIndex) => {
 const updateGameStateSnakeHeadOnFoodCell = (gameState, snakeBodyCords, snakeBodyCordsUpdated) => {
   const snakeBodyNewCords = [snakeBodyCordsUpdated[0], ...snakeBodyCords];
 
-  const foodCellIndex = generateNotOccupiedCellIndex(
-    snakeBodyNewCords,
-    TOTAL_CELL_AMOUNT,
-    GAME_BOARD_COLUMNS
-  );
+  if (snakeBodyNewCords.length < GAME_BOARD_ROWS * GAME_BOARD_COLUMNS) {
+    let foodCellIndex;
+    foodCellIndex = generateNotOccupiedCellIndex(
+      snakeBodyNewCords,
+      TOTAL_CELL_AMOUNT,
+      GAME_BOARD_COLUMNS
+    );
 
-  return {
-    ...gameState,
-    snakeBodyCords: snakeBodyNewCords,
-    foodCellIndex: foodCellIndex,
-    gameScore: gameState.gameScore + 1,
-  };
+    return {
+      ...gameState,
+      snakeBodyCords: snakeBodyNewCords,
+      foodCellIndex: foodCellIndex,
+      gameScore: gameState.gameScore + 1,
+    };
+  }
+
+  return gameState;
 };
 
 const moveSnakeBodyPartsAccordingTheirDirection = (gameState) => {
@@ -156,6 +162,10 @@ const moveSnakeBodyPartsAccordingTheirDirection = (gameState) => {
     } else if (direction === 'RIGHT') {
       updateSnakeBodyCords(prevPartDirection, row, column + 1);
     }
+  }
+
+  if (isMaxScoreReached(snakeBodyCordsUpdated, gameState.foodCellIndex)) {
+    return { ...gameState, isMaxScoreReached: true, gameScore: gameState.gameScore + 1 };
   }
 
   if (isGameOver(snakeBodyCordsUpdated)) return { ...gameState, gameOver: true };
@@ -193,6 +203,21 @@ const snakeGoRight = (gameState) => {
   return updateSnakeHeadDirectionData(gameState, 'RIGHT');
 };
 
+const isMaxScoreReached = (snakeBodyCords, foodCellIndex) => {
+  const snakeHeadCords = snakeBodyCords[0];
+  if (snakeBodyCords.length === GAME_BOARD_ROWS * GAME_BOARD_COLUMNS - 1) {
+    const snakeHeadCordsAsGameBoardCellIndex = calcSnakeBodyPartIndexZeroBased(
+      snakeHeadCords.row,
+      snakeHeadCords.column,
+      GAME_BOARD_COLUMNS
+    );
+    if (snakeHeadCordsAsGameBoardCellIndex === foodCellIndex) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const generateFoodCellIndexAndDispatchAction = (gameState, dispatch) => {
   const foodCellIndex = generateNotOccupiedCellIndex(
     gameState.snakeBodyCords,
@@ -214,7 +239,7 @@ function GameLogic() {
       dispatch({ type: 'SNAKE_MOVE' });
     }, GAME_STEP_INTERVAL);
 
-    if (gameState.gameOver) {
+    if (gameState.gameOver || gameState.isMaxScoreReached) {
       clearInterval(snakeMoveInterval);
     }
 
@@ -254,7 +279,7 @@ function GameLogic() {
   return (
     <>
       {gameState.gameOver && <GameOver />}
-      <Score score={gameState.gameScore} />
+      <Score score={gameState.gameScore} isMaxScoreReached={gameState.isMaxScoreReached} />
       <GameBoard
         cellRowAmount={GAME_BOARD_ROWS}
         cellColumnAmount={GAME_BOARD_COLUMNS}
