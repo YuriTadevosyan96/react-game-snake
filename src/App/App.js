@@ -1,6 +1,6 @@
 import React from 'react';
 
-import GameLogic from '../GameLogic/GameLogic';
+import GameLogic from '../containers/GameLogic/GameLogic';
 
 function App() {
   return <GameLogic />;
