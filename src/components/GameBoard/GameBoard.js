@@ -1,22 +1,28 @@
 import React from 'react';
 
-import GameCells from '../GameCells/GameCells';
+import GameBoardCells from '../GameBoardCells/GameBoardCells';
 import classes from './GameBoard.module.css';
 
-function GameBoard({ cellRowAmount, cellColumnAmount, foodCellIndex, snakeBodyCords }) {
+function GameBoard({
+  gameBoardRows,
+  gameBoardColumns,
+  totalCellAmount,
+  foodCellIndex,
+  snakeBodyIndexes,
+  isMaxScoreReached,
+}) {
   const GameBoardStyles = {
-    gridTemplateRows: `repeat(${cellRowAmount}, 1fr)`,
-    gridTemplateColumns: `repeat(${cellColumnAmount}, 1fr)`,
+    gridTemplateRows: `repeat(${gameBoardRows}, 1fr)`,
+    gridTemplateColumns: `repeat(${gameBoardColumns}, 1fr)`,
   };
-
-  const totalCellAmount = cellRowAmount * cellColumnAmount;
 
   return (
     <div style={GameBoardStyles} className={classes.GameBoard}>
-      <GameCells
+      <GameBoardCells
         totalCellAmount={totalCellAmount}
-        snakeBodyCords={snakeBodyCords}
+        snakeBodyIndexes={snakeBodyIndexes}
         foodCellIndex={foodCellIndex}
+        isMaxScoreReached={isMaxScoreReached}
       />
     </div>
   );

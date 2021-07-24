@@ -1,9 +1,9 @@
 import React from 'react';
 
-import classes from './GameCell.module.css';
+import classes from './GameBoardCell.module.css';
 
-function GameCell({ isFoodCell, isSnakeBodyPart }) {
-  const appliedClasses = [classes.GameCell];
+function GameBoardCell({ isFoodCell, isSnakeBodyPart }) {
+  const appliedClasses = [classes.GameBoardCell];
   if (isFoodCell) {
     appliedClasses.push(classes.FoodCell);
   } else if (isSnakeBodyPart) {
@@ -13,4 +13,4 @@ function GameCell({ isFoodCell, isSnakeBodyPart }) {
   return <div className={appliedClasses.join(' ')}></div>;
 }
 
-export default GameCell;
+export default GameBoardCell;
