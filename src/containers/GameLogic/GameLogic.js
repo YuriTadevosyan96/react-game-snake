@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 
 import GameBoard from '../../components/GameBoard/GameBoard';
 import GameOver from '../../components/GameOver/GameOver';
@@ -233,12 +233,27 @@ const runGameLogic = (gameState) => {
 
 function GameLogic() {
   const [gameState, dispatch] = useReducer(gameControlReducer, gameInitialState);
+  const [gameCycleIntervalId, setGameCycleIntervalId] = useState(null);
 
   useEffect(() => {
     dispatch({ type: 'SET_FOOD_CELL_INITIAL_INDEX' });
+
+    const gameCycle = setInterval(() => {
+      dispatch({ type: 'RUN_GAME_LOGIC' });
+    }, GAME_STEP_INTERVAL);
+
+    setGameCycleIntervalId(gameCycle);
+
+    return () => {
+      clearInterval(gameCycle);
+    };
   }, []);
 
   useEffect(() => {
+    if (gameState.gameOver || gameState.isMaxScoreReached) {
+      clearInterval(gameCycleIntervalId);
+    }
+
     const gameControlKeyDownHandler = (event) => {
       const snakeHeadCurrentDirection = gameState.snakeHeadDirection;
       switch (event.key) {
@@ -266,20 +281,6 @@ function GameLogic() {
 
     return () => {
       document.removeEventListener('keydown', gameControlKeyDownHandler);
-    };
-  }, [gameState]);
-
-  useEffect(() => {
-    const gameCycle = setTimeout(() => {
-      dispatch({ type: 'RUN_GAME_LOGIC' });
-    }, GAME_STEP_INTERVAL);
-
-    if (gameState.gameOver || gameState.isMaxScoreReached) {
-      clearTimeout(gameCycle);
-    }
-
-    return () => {
-      clearTimeout(gameCycle);
     };
   }, [gameState]);
 
