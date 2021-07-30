@@ -1,6 +1,6 @@
 # React implementation of classic game snake
 
-![Game Trailer]('./game-trailer.gif').
+![Game Trailer](./game-trailer.gif).
 
 # Getting Started with Create React App
 
