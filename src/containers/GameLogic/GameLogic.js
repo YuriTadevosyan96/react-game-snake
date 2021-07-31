@@ -2,6 +2,7 @@ import React, { useEffect, useReducer, useState } from 'react';
 
 import GameBoard from '../../components/GameBoard/GameBoard';
 import GameOver from '../../components/GameOver/GameOver';
+import RestartGame from '../../components/RestartGame/RestartGame';
 import Score from '../../components/Score/Score';
 
 const GAME_BOARD_ROWS = 10;
@@ -19,6 +20,7 @@ const gameInitialState = {
   foodCellIndex: null,
   gameOver: false,
   isMaxScoreReached: false,
+  restartGame: null,
 };
 
 const gameControlReducer = (state, action) => {
@@ -35,6 +37,8 @@ const gameControlReducer = (state, action) => {
       return updateSnakeHeadDirectionState(state, 'RIGHT');
     case 'RUN_GAME_LOGIC':
       return runGameLogic(state);
+    case 'RESTART_GAME':
+      return { ...gameInitialState, restartGame: {} };
     default:
       throw new Error('Unknown action type provided!');
   }
@@ -231,6 +235,10 @@ const runGameLogic = (gameState) => {
   return { ...gameState, snakeBodyCords: snakeBodyCordsUpdated };
 };
 
+const restartGameHandler = (dispatch) => {
+  dispatch({ type: 'RESTART_GAME' });
+};
+
 function GameLogic() {
   const [gameState, dispatch] = useReducer(gameControlReducer, gameInitialState);
   const [gameCycleIntervalId, setGameCycleIntervalId] = useState(null);
@@ -247,7 +255,7 @@ function GameLogic() {
     return () => {
       clearInterval(gameCycle);
     };
-  }, []);
+  }, [gameState.restartGame]);
 
   useEffect(() => {
     if (gameState.gameOver || gameState.isMaxScoreReached) {
@@ -288,6 +296,7 @@ function GameLogic() {
     <>
       {gameState.gameOver && <GameOver />}
       <Score score={gameState.gameScore} isMaxScoreReached={gameState.isMaxScoreReached} />
+      {gameState.gameOver && <RestartGame restartHandler={() => restartGameHandler(dispatch)} />}
       <GameBoard
         gameBoardRows={GAME_BOARD_ROWS}
         gameBoardColumns={GAME_BOARD_COLUMNS}
