@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import React, { useEffect, useReducer, useState, useCallback } from 'react';
 
 import GameBoard from '../../components/GameBoard/GameBoard';
 import GameOver from '../../components/GameOver/GameOver';
@@ -20,28 +20,27 @@ const gameInitialState = {
   foodCellIndex: null,
   gameOver: false,
   isMaxScoreReached: false,
-  restartGame: null,
+  restartGame: {}, // object is used to easily change reference
 };
 
 const gameControlReducer = (state, action) => {
-  switch (action.type) {
+  const { type, payload } = action;
+  switch (type) {
     case 'SET_FOOD_CELL_INITIAL_INDEX':
       return setFoodCellIndexInitialState(state);
-    case 'CHANGE_SNAKE_HEAD_DIRECTION_UP':
-      return updateSnakeHeadDirectionState(state, 'UP');
-    case 'CHANGE_SNAKE_HEAD_DIRECTION_DOWN':
-      return updateSnakeHeadDirectionState(state, 'DOWN');
-    case 'CHANGE_SNAKE_HEAD_DIRECTION_LEFT':
-      return updateSnakeHeadDirectionState(state, 'LEFT');
-    case 'CHANGE_SNAKE_HEAD_DIRECTION_RIGHT':
-      return updateSnakeHeadDirectionState(state, 'RIGHT');
+    case 'CHANGE_SNAKE_HEAD_DIRECTION':
+      return updateSnakeHeadDirectionState(state, payload);
     case 'RUN_GAME_LOGIC':
       return runGameLogic(state);
     case 'RESTART_GAME':
-      return { ...gameInitialState, restartGame: {} };
+      return restartGame();
     default:
       throw new Error('Unknown action type provided!');
   }
+};
+
+const restartGame = () => {
+  return { ...gameInitialState, restartGame: {} }; // changing object reference for restartGame to cause state update
 };
 
 const setFoodCellIndexInitialState = (state) => {
@@ -65,17 +64,15 @@ const generateRandomFoodCellIndex = () => {
   return Math.floor(Math.random() * GAME_BOARD_TOTAL_CELLS);
 };
 
-const calcSnakeBodyPartIndexZeroBased = (row, column) => {
+const calcSnakeBodyPartIndexZeroBased = (cords) => {
+  const { row, column } = cords;
   const index = (row - 1) * GAME_BOARD_COLUMNS + column;
   return index - 1;
 };
 
 const isFoodCellIndexMatchingWithSnakeBodyCords = (snakeBodyCords, foodCellIndex) => {
   return snakeBodyCords.some((bodyPartCords) => {
-    const snakeBodyPartIndex = calcSnakeBodyPartIndexZeroBased(
-      bodyPartCords.row,
-      bodyPartCords.column
-    );
+    const snakeBodyPartIndex = calcSnakeBodyPartIndexZeroBased(bodyPartCords);
 
     return snakeBodyPartIndex === foodCellIndex;
   });
@@ -85,7 +82,7 @@ const generateNotOccupiedCellIndex = (snakeBodyCords) => {
   let randomFoodCellIndex = generateRandomFoodCellIndex();
 
   while (isFoodCellIndexMatchingWithSnakeBodyCords(snakeBodyCords, randomFoodCellIndex)) {
-    console.log('random index cell regenerate');
+    console.log('random index cell regenerate'); // logged because potential infinite loop logic is implemented
     randomFoodCellIndex = generateRandomFoodCellIndex();
   }
 
@@ -94,23 +91,16 @@ const generateNotOccupiedCellIndex = (snakeBodyCords) => {
 
 const convertSnakeBodyCordsToZeroBasedIndexes = (snakeBodyCords) => {
   return snakeBodyCords.map((snakeBodyPartCords) =>
-    calcSnakeBodyPartIndexZeroBased(snakeBodyPartCords.row, snakeBodyPartCords.column)
+    calcSnakeBodyPartIndexZeroBased(snakeBodyPartCords)
   );
 };
 
 const isSnakeHeadHitTheWall = (snakeHeadCords) => {
   const { row, column } = snakeHeadCords;
 
-  if (
-    row === 0 ||
-    row === GAME_BOARD_ROWS + 1 ||
-    column === 0 ||
-    column === GAME_BOARD_COLUMNS + 1
-  ) {
-    return true;
-  }
-
-  return false;
+  return (
+    row === 0 || row === GAME_BOARD_ROWS + 1 || column === 0 || column === GAME_BOARD_COLUMNS + 1
+  );
 };
 
 const isSnakeHeadOverlapItsOwnBody = (snakeBodyCords, snakeHeadCords) => {
@@ -120,36 +110,26 @@ const isSnakeHeadOverlapItsOwnBody = (snakeBodyCords, snakeHeadCords) => {
     snakeBodyPartIndex++
   ) {
     if (
-      snakeBodyCords[snakeBodyPartIndex].row === snakeHeadCords.row &&
-      snakeBodyCords[snakeBodyPartIndex].column === snakeHeadCords.column
+      calcSnakeBodyPartIndexZeroBased(snakeBodyCords[snakeBodyPartIndex]) ===
+      calcSnakeBodyPartIndexZeroBased(snakeHeadCords)
     ) {
       return true;
     }
   }
-
-  return false;
 };
 
 const isGameOver = (snakeBodyCords) => {
   const snakeHeadCords = snakeBodyCords[0];
-  if (
+  return (
     isSnakeHeadHitTheWall(snakeHeadCords) ||
     isSnakeHeadOverlapItsOwnBody(snakeBodyCords, snakeHeadCords)
-  ) {
-    return true;
-  }
-
-  return false;
+  );
 };
 
 const isSnakeHeadIndexMatchWithFoodCellIndex = (snakeHeadCords, foodCellIndex) => {
-  const snakeHeadIndex = calcSnakeBodyPartIndexZeroBased(snakeHeadCords.row, snakeHeadCords.column);
+  const snakeHeadIndex = calcSnakeBodyPartIndexZeroBased(snakeHeadCords);
 
-  if (snakeHeadIndex === foodCellIndex) {
-    return true;
-  }
-
-  return false;
+  return snakeHeadIndex === foodCellIndex;
 };
 
 const updateGameStateSnakeHeadOnFoodCell = (gameState, snakeHeadCords) => {
@@ -166,15 +146,11 @@ const updateGameStateSnakeHeadOnFoodCell = (gameState, snakeHeadCords) => {
 const isMaxScoreReached = (snakeBodyCords, foodCellIndex) => {
   const snakeHeadCords = snakeBodyCords[0];
   if (snakeBodyCords.length === GAME_BOARD_TOTAL_CELLS - 1) {
-    const snakeHeadIndex = calcSnakeBodyPartIndexZeroBased(
-      snakeHeadCords.row,
-      snakeHeadCords.column
-    );
+    const snakeHeadIndex = calcSnakeBodyPartIndexZeroBased(snakeHeadCords);
     if (snakeHeadIndex === foodCellIndex) {
       return true;
     }
   }
-  return false;
 };
 
 const updateSnakeBodyCordsBasedOnDirection = (snakeBodyCords, snakeHeadDirection) => {
@@ -198,14 +174,20 @@ const updateSnakeBodyCordsBasedOnDirection = (snakeBodyCords, snakeHeadDirection
       prevPartDirection = snakeHeadDirection;
     }
 
-    if (direction === 'UP') {
-      updateSnakeBodyPartDirection(prevPartDirection, row - 1, column);
-    } else if (direction === 'DOWN') {
-      updateSnakeBodyPartDirection(prevPartDirection, row + 1, column);
-    } else if (direction === 'LEFT') {
-      updateSnakeBodyPartDirection(prevPartDirection, row, column - 1);
-    } else if (direction === 'RIGHT') {
-      updateSnakeBodyPartDirection(prevPartDirection, row, column + 1);
+    switch (direction) {
+      case 'UP':
+        updateSnakeBodyPartDirection(prevPartDirection, row - 1, column);
+        break;
+      case 'DOWN':
+        updateSnakeBodyPartDirection(prevPartDirection, row + 1, column);
+        break;
+      case 'LEFT':
+        updateSnakeBodyPartDirection(prevPartDirection, row, column - 1);
+        break;
+      case 'RIGHT':
+        updateSnakeBodyPartDirection(prevPartDirection, row, column + 1);
+        break;
+      default:
     }
   }
 
@@ -239,9 +221,49 @@ const restartGameHandler = (dispatch) => {
   dispatch({ type: 'RESTART_GAME' });
 };
 
-function GameLogic() {
+const GameLogic = () => {
   const [gameState, dispatch] = useReducer(gameControlReducer, gameInitialState);
   const [gameCycleIntervalId, setGameCycleIntervalId] = useState(null);
+
+  const {
+    snakeBodyCords,
+    snakeHeadDirection,
+    gameScore,
+    foodCellIndex,
+    gameOver,
+    isMaxScoreReached,
+    restartGame,
+  } = gameState;
+
+  const gameControlKeyDownHandler = useCallback(
+    (event) => {
+      const isCurrentDirectionUpOrDown =
+        snakeHeadDirection === 'UP' || snakeHeadDirection === 'DOWN';
+      const isCurrentDirectionLeftOrRight =
+        snakeHeadDirection === 'LEFT' || snakeHeadDirection === 'RIGHT';
+
+      switch (event.key) {
+        case 'ArrowUp':
+          if (isCurrentDirectionLeftOrRight)
+            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION', payload: 'UP' });
+          break;
+        case 'ArrowDown':
+          if (isCurrentDirectionLeftOrRight)
+            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION', payload: 'DOWN' });
+          break;
+        case 'ArrowLeft':
+          if (isCurrentDirectionUpOrDown)
+            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION', payload: 'LEFT' });
+          break;
+        case 'ArrowRight':
+          if (isCurrentDirectionUpOrDown)
+            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION', payload: 'RIGHT' });
+          break;
+        default:
+      }
+    },
+    [snakeHeadDirection]
+  );
 
   useEffect(() => {
     dispatch({ type: 'SET_FOOD_CELL_INITIAL_INDEX' });
@@ -252,61 +274,34 @@ function GameLogic() {
 
     setGameCycleIntervalId(gameCycle);
 
-    return () => {
-      clearInterval(gameCycle);
-    };
-  }, [gameState.restartGame]);
+    return () => clearInterval(gameCycle);
+  }, [restartGame]);
 
   useEffect(() => {
-    if (gameState.gameOver || gameState.isMaxScoreReached) {
+    if (gameOver || isMaxScoreReached) {
       clearInterval(gameCycleIntervalId);
     }
 
-    const gameControlKeyDownHandler = (event) => {
-      const snakeHeadCurrentDirection = gameState.snakeHeadDirection;
-      switch (event.key) {
-        case 'ArrowUp':
-          if (snakeHeadCurrentDirection !== 'DOWN')
-            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION_UP' });
-          break;
-        case 'ArrowDown':
-          if (snakeHeadCurrentDirection !== 'UP')
-            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION_DOWN' });
-          break;
-        case 'ArrowLeft':
-          if (snakeHeadCurrentDirection !== 'RIGHT')
-            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION_LEFT' });
-          break;
-        case 'ArrowRight':
-          if (snakeHeadCurrentDirection !== 'LEFT')
-            dispatch({ type: 'CHANGE_SNAKE_HEAD_DIRECTION_RIGHT' });
-          break;
-        default:
-      }
-    };
+    document.addEventListener('keydown', gameControlKeyDownHandler, { once: true });
 
-    document.addEventListener('keydown', gameControlKeyDownHandler);
-
-    return () => {
-      document.removeEventListener('keydown', gameControlKeyDownHandler);
-    };
-  }, [gameState]);
+    return () => document.removeEventListener('keydown', gameControlKeyDownHandler, { once: true });
+  }, [snakeBodyCords]);
 
   return (
     <>
-      {gameState.gameOver && <GameOver />}
-      <Score score={gameState.gameScore} isMaxScoreReached={gameState.isMaxScoreReached} />
-      {gameState.gameOver && <RestartGame restartHandler={() => restartGameHandler(dispatch)} />}
+      {gameOver && <GameOver />}
+      <Score score={gameScore} isMaxScoreReached={isMaxScoreReached} />
+      {gameOver && <RestartGame restartHandler={() => restartGameHandler(dispatch)} />}
       <GameBoard
         gameBoardRows={GAME_BOARD_ROWS}
         gameBoardColumns={GAME_BOARD_COLUMNS}
         totalCellAmount={GAME_BOARD_TOTAL_CELLS}
-        foodCellIndex={gameState.foodCellIndex}
-        isMaxScoreReached={gameState.isMaxScoreReached}
-        snakeBodyIndexes={convertSnakeBodyCordsToZeroBasedIndexes(gameState.snakeBodyCords)}
+        foodCellIndex={foodCellIndex}
+        isMaxScoreReached={isMaxScoreReached}
+        snakeBodyIndexes={convertSnakeBodyCordsToZeroBasedIndexes(snakeBodyCords)}
       />
     </>
   );
-}
+};
 
 export default GameLogic;

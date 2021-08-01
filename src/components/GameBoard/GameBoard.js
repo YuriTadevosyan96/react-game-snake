@@ -3,14 +3,14 @@ import React from 'react';
 import GameBoardCells from '../GameBoardCells/GameBoardCells';
 import classes from './GameBoard.module.css';
 
-function GameBoard({
+const GameBoard = ({
   gameBoardRows,
   gameBoardColumns,
   totalCellAmount,
   foodCellIndex,
   snakeBodyIndexes,
   isMaxScoreReached,
-}) {
+}) => {
   const GameBoardStyles = {
     gridTemplateRows: `repeat(${gameBoardRows}, 1fr)`,
     gridTemplateColumns: `repeat(${gameBoardColumns}, 1fr)`,
@@ -26,6 +26,6 @@ function GameBoard({
       />
     </div>
   );
-}
+};
 
 export default GameBoard;
