@@ -2,7 +2,12 @@ import React from 'react';
 
 import GameCell from '../GameBoardCell/GameBoardCell';
 
-function GameBoardCells({ totalCellAmount, foodCellIndex, snakeBodyIndexes, isMaxScoreReached }) {
+const GameBoardCells = ({
+  totalCellAmount,
+  foodCellIndex,
+  snakeBodyIndexes,
+  isMaxScoreReached,
+}) => {
   const gameBoardCells = new Array(totalCellAmount).fill();
 
   return gameBoardCells.map((_, cellIndex) => {
@@ -22,6 +27,6 @@ function GameBoardCells({ totalCellAmount, foodCellIndex, snakeBodyIndexes, isMa
       />
     );
   });
-}
+};
 
 export default GameBoardCells;
