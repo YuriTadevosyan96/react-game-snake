@@ -1,8 +1,9 @@
 import React, { useEffect, useReducer, useState, useCallback } from 'react';
 
+import GameExplanation from '../../components/GameExplanation/GameExplanation';
 import GameBoard from '../../components/GameBoard/GameBoard';
 import GameOver from '../../components/GameOver/GameOver';
-import RestartGame from '../../components/RestartGame/RestartGame';
+import StartOrRestartGame from '../../components/StartOrRestartGame/StartOrRestartGame';
 import Score from '../../components/Score/Score';
 
 const GAME_BOARD_ROWS = 10;
@@ -20,12 +21,15 @@ const gameInitialState = {
   foodCellIndex: null,
   gameOver: false,
   isMaxScoreReached: false,
+  startGame: false,
   restartGame: {}, // object is used to easily change reference
 };
 
 const gameControlReducer = (state, action) => {
   const { type, payload } = action;
   switch (type) {
+    case 'START_GAME':
+      return startGame();
     case 'SET_FOOD_CELL_INITIAL_INDEX':
       return setFoodCellIndexInitialState(state);
     case 'CHANGE_SNAKE_HEAD_DIRECTION':
@@ -39,8 +43,12 @@ const gameControlReducer = (state, action) => {
   }
 };
 
+const startGame = () => {
+  return { ...gameInitialState, startGame: true };
+};
+
 const restartGame = () => {
-  return { ...gameInitialState, restartGame: {} }; // changing object reference for restartGame to cause state update
+  return { ...gameInitialState, startGame: true, restartGame: {} }; // changing object reference for restartGame to cause state update
 };
 
 const setFoodCellIndexInitialState = (state) => {
@@ -221,6 +229,10 @@ const restartGameHandler = (dispatch) => {
   dispatch({ type: 'RESTART_GAME' });
 };
 
+const startGameHandler = (dispatch) => {
+  dispatch({ type: 'START_GAME' });
+};
+
 const GameLogic = () => {
   const [gameState, dispatch] = useReducer(gameControlReducer, gameInitialState);
   const [gameCycleIntervalId, setGameCycleIntervalId] = useState(null);
@@ -232,6 +244,7 @@ const GameLogic = () => {
     foodCellIndex,
     gameOver,
     isMaxScoreReached,
+    startGame,
     restartGame,
   } = gameState;
 
@@ -266,16 +279,18 @@ const GameLogic = () => {
   );
 
   useEffect(() => {
-    dispatch({ type: 'SET_FOOD_CELL_INITIAL_INDEX' });
+    if (startGame) {
+      dispatch({ type: 'SET_FOOD_CELL_INITIAL_INDEX' });
 
-    const gameCycle = setInterval(() => {
-      dispatch({ type: 'RUN_GAME_LOGIC' });
-    }, GAME_STEP_INTERVAL);
+      const gameCycle = setInterval(() => {
+        dispatch({ type: 'RUN_GAME_LOGIC' });
+      }, GAME_STEP_INTERVAL);
 
-    setGameCycleIntervalId(gameCycle);
+      setGameCycleIntervalId(gameCycle);
 
-    return () => clearInterval(gameCycle);
-  }, [restartGame]);
+      return () => clearInterval(gameCycle);
+    }
+  }, [restartGame, startGame]);
 
   useEffect(() => {
     if (gameOver || isMaxScoreReached) {
@@ -290,8 +305,10 @@ const GameLogic = () => {
   return (
     <>
       {gameOver && <GameOver />}
+      {!startGame && <GameExplanation />}
       <Score score={gameScore} isMaxScoreReached={isMaxScoreReached} />
-      {gameOver && <RestartGame restartHandler={() => restartGameHandler(dispatch)} />}
+      {!startGame && <StartOrRestartGame isStart handler={() => startGameHandler(dispatch)} />}
+      {gameOver && <StartOrRestartGame handler={() => restartGameHandler(dispatch)} />}
       <GameBoard
         gameBoardRows={GAME_BOARD_ROWS}
         gameBoardColumns={GAME_BOARD_COLUMNS}
