@@ -6,6 +6,15 @@
   background-color: #ff0000;
 }
 
+.SnakeBodyPart,
+.SnakeHead {
+  border: 1px solid #fff;
+}
+
 .SnakeBodyPart {
   background-color: var(--color-primary);
+}
+
+.SnakeHead {
+  background-color: blue;
 }

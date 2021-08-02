@@ -22,7 +22,8 @@ const GameBoardCells = ({
     return (
       <GameCell
         key={cellIndex}
-        isFoodCell={foodCellIndex === cellIndex && !isMaxScoreReached}
+        isSnakeHead={snakeBodyIndexes[0] === cellIndex}
+        isFoodCell={foodCellIndex === cellIndex}
         isSnakeBodyPart={isSnakeBodyPart}
       />
     );

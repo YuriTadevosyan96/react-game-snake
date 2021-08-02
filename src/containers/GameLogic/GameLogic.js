@@ -211,7 +211,12 @@ const runGameLogic = (gameState) => {
   );
 
   if (isMaxScoreReached(snakeBodyCordsUpdated, foodCellIndex)) {
-    return { ...gameState, isMaxScoreReached: true, gameScore: gameScore + 1 };
+    return {
+      ...gameState,
+      snakeBodyCords: snakeBodyCordsUpdated,
+      isMaxScoreReached: true,
+      gameScore: gameScore + 1,
+    };
   }
 
   if (isGameOver(snakeBodyCordsUpdated)) {
@@ -300,7 +305,7 @@ const GameLogic = () => {
     document.addEventListener('keydown', gameControlKeyDownHandler, { once: true });
 
     return () => document.removeEventListener('keydown', gameControlKeyDownHandler, { once: true });
-  }, [snakeBodyCords]);
+  }, [snakeBodyCords, isMaxScoreReached]);
 
   return (
     <>
@@ -308,7 +313,9 @@ const GameLogic = () => {
       {!startGame && <GameExplanation />}
       <Score score={gameScore} isMaxScoreReached={isMaxScoreReached} />
       {!startGame && <StartOrRestartGame isStart handler={() => startGameHandler(dispatch)} />}
-      {gameOver && <StartOrRestartGame handler={() => restartGameHandler(dispatch)} />}
+      {gameOver || isMaxScoreReached ? (
+        <StartOrRestartGame handler={() => restartGameHandler(dispatch)} />
+      ) : null}
       <GameBoard
         gameBoardRows={GAME_BOARD_ROWS}
         gameBoardColumns={GAME_BOARD_COLUMNS}
